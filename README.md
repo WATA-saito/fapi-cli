@@ -11,11 +11,36 @@ FastAPIアプリケーションに対してサーバーを起動せずにHTTPリ
 
 ## インストール
 
+### PyPIからインストール
+
+```bash
+pip install fapi-cli
+```
+
+### pipxでインストール（推奨）
+
+```bash
+pipx install fapi-cli
+```
+
+### uvxで一時実行
+
+```bash
+uvx fapi-cli request main.py -P /
+```
+
+### 開発用インストール
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 ```
+
+## 要件
+
+- Python 3.9以上
+- FastAPIアプリケーション（テスト対象）
 
 ## 使い方
 
