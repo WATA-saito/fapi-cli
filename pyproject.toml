@@ -24,17 +24,18 @@ classifiers = [
   "Topic :: Software Development :: Testing",
   "Topic :: Utilities"
 ]
+dependencies = [
+  "fastapi>=0.115",
+  "typer>=0.9.0",
+  "httpx>=0.27"
+]
+
 [project.urls]
 Homepage = "https://github.com/WATA-saito/fapi-cli"
 Repository = "https://github.com/WATA-saito/fapi-cli"
 Documentation = "https://github.com/WATA-saito/fapi-cli#readme"
 Issues = "https://github.com/WATA-saito/fapi-cli/issues"
 "Bug Tracker" = "https://github.com/WATA-saito/fapi-cli/issues"
-dependencies = [
-  "fastapi>=0.115",
-  "typer>=0.9.0",
-  "httpx>=0.27"
-]
 
 [project.optional-dependencies]
 dev = [
