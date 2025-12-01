@@ -40,6 +40,7 @@ pip install -e .[dev]
 ## 要件
 
 - Python 3.9以上
+- FastAPI 0.87.0以上（TestClientがhttpxベースのバージョン）
 - FastAPIアプリケーション（テスト対象）
 
 ## 使い方
@@ -65,6 +66,29 @@ source .venv/bin/activate
 pip install -e .[dev]
 pytest
 ```
+
+### 複数バージョンでのテスト
+
+このプロジェクトは複数のFastAPIバージョンでテストされています。
+
+#### toxを使用したテスト
+
+```bash
+# すべての環境でテストを実行
+tox
+
+# 特定のPythonバージョンとFastAPIバージョンの組み合わせでテスト
+tox -e py312-fastapilatest
+```
+
+#### サポートされているFastAPIバージョン
+
+- FastAPI 0.87.0以上、0.100.0未満
+- FastAPI 0.100.0以上、0.115.0未満
+- FastAPI 0.115.0以上、0.120.0未満
+- FastAPI 0.120.0以上（最新）
+
+CIでは、Python 3.9、3.10、3.11、3.12、3.13、3.14と上記のFastAPIバージョンの組み合わせでテストが実行されます。
 
 ### パッケージング
 

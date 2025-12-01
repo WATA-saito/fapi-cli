@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        fastapi-version:
+          - ">=0.87.0,<0.100.0"
+          - ">=0.100.0,<0.115.0"
+          - ">=0.115.0,<0.120.0"
+          - ">=0.120.0"
+        exclude:
+          # 最新バージョンは最新のPythonバージョンでテスト
+          - python-version: "3.9"
+            fastapi-version: ">=0.120.0"
+          - python-version: "3.10"
+            fastapi-version: ">=0.120.0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "fastapi${{ matrix.fastapi-version }}"
+          pip install -e .[dev]
+
+      - name: Run tests
+        run: |
+          pytest --cov=fapi_cli --cov-report=term-missing -v
