@@ -205,7 +205,9 @@ def test_headers(tmp_path: Path, header_option: List[str]) -> None:
         """,
     )
 
-    result = _invoke(["request", str(app_path), "-P", "/protected", "-H", header_option[0]])
+    result = _invoke(
+        ["request", str(app_path), "-P", "/protected", "-H", header_option[0]]
+    )
 
     assert result.exit_code == 0, result.output
     payload = json.loads(result.stdout)

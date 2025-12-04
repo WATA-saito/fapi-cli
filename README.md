@@ -29,17 +29,10 @@ pipx install fapi-cli
 uvx fapi-cli request main.py -P /
 ```
 
-### 開発用インストール
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-```
-
 ## 要件
 
 - Python 3.9以上
+- FastAPI 0.100.0以上
 - FastAPIアプリケーション（テスト対象）
 
 ## 使い方
@@ -56,27 +49,6 @@ fapi-cli request src/main.py -H "Authorization: Bearer token" -q "page=1"
 
 # アプリケーションの変数名が app 以外の場合
 fapi-cli request src/api.py --app-name fastapi_app
-```
-
-## 開発
-
-```bash
-source .venv/bin/activate
-pip install -e .[dev]
-pytest
-```
-
-### パッケージング
-
-```bash
-python -m build
-twine check dist/*
-```
-
-TestPyPIへアップロードする場合は、事前に`~/.pypirc`を設定した上で以下のコマンドを実行してください。
-
-```bash
-twine upload --repository testpypi dist/*
 ```
 
 ## ライセンス
