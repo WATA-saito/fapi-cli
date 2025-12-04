@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+src/fapi_cli/_version.py
 develop-eggs/
 dist/
 downloads/

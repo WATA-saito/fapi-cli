@@ -1,15 +1,13 @@
 """FastAPI CLIツールのパッケージエントリ。"""
 
-from importlib.metadata import version, PackageNotFoundError
-
 __all__ = ["__version__"]
 
-
-def _resolve_version() -> str:
+try:
+    from fapi_cli._version import __version__
+except ImportError:  # pragma: no cover - editable install without build
     try:
-        return version("fapi-cli")
-    except PackageNotFoundError:  # pragma: no cover - fallback during development
-        return "0.0.0"
+        from importlib.metadata import version
 
-
-__version__ = _resolve_version()
+        __version__ = version("fapi-cli")
+    except Exception:
+        __version__ = "0.0.0+unknown"
