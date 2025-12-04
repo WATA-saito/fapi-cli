@@ -35,6 +35,6 @@ def test_is_fastapi_version_at_least() -> None:
 )
 def test_fastapi_version_compatibility(min_version: str) -> None:
     """FastAPIのバージョンが最小要件を満たしていることを確認する。"""
-    assert is_fastapi_version_at_least(
-        min_version
-    ), f"FastAPI {get_fastapi_version()} should be >= {min_version}"
+    assert is_fastapi_version_at_least(min_version), (
+        f"FastAPI {get_fastapi_version()} should be >= {min_version}"
+    )

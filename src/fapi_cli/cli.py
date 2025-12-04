@@ -16,7 +16,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
-app = typer.Typer(help="FastAPIアプリケーションに対してローカルでリクエストを送信します。")
+app = typer.Typer(
+    help="FastAPIアプリケーションに対してローカルでリクエストを送信します。"
+)
 
 DEFAULT_APP_NAMES: Tuple[str, ...] = ("app", "application", "fastapi_app")
 VALID_METHODS: Tuple[str, ...] = (
@@ -58,7 +60,9 @@ def _parse_headers(raw_headers: Sequence[str]) -> Dict[str, str]:
     headers: Dict[str, str] = {}
     for header in raw_headers:
         if ":" not in header:
-            raise CLIError(f"ヘッダーの形式が無効です: '{header}'。'Key: Value' の形式を使用してください。")
+            raise CLIError(
+                f"ヘッダーの形式が無効です: '{header}'。'Key: Value' の形式を使用してください。"
+            )
         key, value = header.split(":", 1)
         key = key.strip()
         value = value.strip()
@@ -89,7 +93,9 @@ def _parse_json(data: Optional[str]) -> Optional[Any]:
 def _validate_method(method: str) -> str:
     normalized = method.upper()
     if normalized not in VALID_METHODS:
-        raise CLIError(f"HTTPメソッドが不正です: {method}。対応メソッド: {', '.join(VALID_METHODS)}")
+        raise CLIError(
+            f"HTTPメソッドが不正です: {method}。対応メソッド: {', '.join(VALID_METHODS)}"
+        )
     return normalized
 
 
@@ -180,7 +186,9 @@ def request(
     ),
     path: str = typer.Option("/", "--path", "-P", help="リクエスト送信先のパス"),
     method: str = typer.Option("GET", "--method", "-X", help="HTTPメソッド"),
-    data: Optional[str] = typer.Option(None, "--data", "-d", help="JSON形式のリクエストボディ"),
+    data: Optional[str] = typer.Option(
+        None, "--data", "-d", help="JSON形式のリクエストボディ"
+    ),
     header: List[str] = typer.Option(
         [],
         "--header",

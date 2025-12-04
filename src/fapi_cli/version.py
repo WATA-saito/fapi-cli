@@ -9,6 +9,7 @@ def get_fastapi_version() -> str:
     """インストールされているFastAPIのバージョンを取得する。"""
     try:
         from fastapi import __version__
+
         return __version__
     except ImportError:
         return "0.0.0"
