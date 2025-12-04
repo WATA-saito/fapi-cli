@@ -32,7 +32,6 @@ tox -e py312-fastapilatest
 
 ### サポートされているFastAPIバージョン
 
-- FastAPI 0.87.0以上、0.100.0未満
 - FastAPI 0.100.0以上、0.115.0未満
 - FastAPI 0.115.0以上、0.120.0未満
 - FastAPI 0.120.0以上（最新）

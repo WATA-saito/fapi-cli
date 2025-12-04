@@ -36,18 +36,10 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         fastapi-version:
-          - ">=0.87.0,<0.100.0"
           - ">=0.100.0,<0.115.0"
           - ">=0.115.0,<0.120.0"
           - ">=0.120.0"
         exclude:
-          # 古いFastAPIバージョンは古いPythonでのみテスト
-          - python-version: "3.12"
-            fastapi-version: ">=0.87.0,<0.100.0"
-          - python-version: "3.13"
-            fastapi-version: ">=0.87.0,<0.100.0"
-          - python-version: "3.14"
-            fastapi-version: ">=0.87.0,<0.100.0"
           # 最新FastAPIバージョンは新しいPythonでのみテスト
           - python-version: "3.9"
             fastapi-version: ">=0.120.0"

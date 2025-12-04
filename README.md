@@ -32,7 +32,7 @@ uvx fapi-cli request main.py -P /
 ## 要件
 
 - Python 3.9以上
-- FastAPI 0.87.0以上（TestClientがhttpxベースのバージョン）
+- FastAPI 0.100.0以上
 - FastAPIアプリケーション（テスト対象）
 
 ## 使い方
