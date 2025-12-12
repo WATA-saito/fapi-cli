@@ -548,7 +548,9 @@ def test_data_and_form_exclusive(tmp_path: Path) -> None:
     assert "同時に指定できません" in result.output
 
 
-def test_form_without_multipart_installed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_form_without_multipart_installed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """python-multipart がインストールされていない場合のエラーテスト"""
     import builtins
 

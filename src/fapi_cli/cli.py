@@ -164,7 +164,9 @@ def _parse_form(
             try:
                 file_content = file_path.read_bytes()
             except OSError as exc:
-                raise CLIError(f"ファイルの読み込みに失敗しました: {file_path} - {exc}") from exc
+                raise CLIError(
+                    f"ファイルの読み込みに失敗しました: {file_path} - {exc}"
+                ) from exc
 
             filename = custom_filename if custom_filename else file_path.name
             files[key] = (filename, file_content, content_type)
@@ -237,7 +239,9 @@ def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, A
     files_param = None
     if config.files:
         files_param = {
-            field: (filename, content, content_type) if content_type else (filename, content)
+            field: (filename, content, content_type)
+            if content_type
+            else (filename, content)
             for field, (filename, content, content_type) in config.files.items()
         }
 
