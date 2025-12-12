@@ -1,5 +1,3 @@
-# CLI Tool Specification
-
 ## ADDED Requirements
 
 ### Requirement: FastAPI Request Command
@@ -58,33 +56,6 @@ The CLI tool SHALL output responses in a structured JSON format to stdout.
 #### Scenario: Response headers output (optional)
 - **WHEN** user specifies `--include-headers` flag
 - **THEN** the tool includes response headers in the output JSON
-
-### Requirement: Command Line Interface
-The CLI tool SHALL provide a command-line interface with the following options.
-
-#### Scenario: Help command
-- **WHEN** user executes `fapi-cli --help` or `fapi-cli request --help`
-- **THEN** the tool displays usage information and available options
-
-#### Scenario: HTTP method specification
-- **WHEN** user executes `fapi-cli request src/main.py -X POST` or `fapi-cli request src/main.py --method PUT`
-- **THEN** the tool uses the specified HTTP method for the request
-
-#### Scenario: Path specification
-- **WHEN** user executes `fapi-cli request src/main.py -P /api/users` or `fapi-cli request src/main.py --path /api/users`
-- **THEN** the tool sends the request to the specified path (default: `/`)
-
-#### Scenario: Request body specification
-- **WHEN** user executes `fapi-cli request src/main.py -d '{"key":"value"}'` or `fapi-cli request src/main.py --data '{"key":"value"}'`
-- **THEN** the tool includes the specified JSON body in the request
-
-#### Scenario: Header specification
-- **WHEN** user executes `fapi-cli request src/main.py -H "Key: Value"` or `fapi-cli request src/main.py --header "Key: Value"`
-- **THEN** the tool includes the specified header in the request (can be specified multiple times)
-
-#### Scenario: Query parameter specification
-- **WHEN** user executes `fapi-cli request src/main.py -q "key=value"` or `fapi-cli request src/main.py --query "key=value"`
-- **THEN** the tool appends the query parameters to the request URL
 
 ### Requirement: Error Handling
 The CLI tool SHALL handle errors gracefully and provide clear error messages.
