@@ -40,13 +40,17 @@ Issues = "https://github.com/WATA-saito/fapi-cli/issues"
 "Bug Tracker" = "https://github.com/WATA-saito/fapi-cli/issues"
 
 [project.optional-dependencies]
+form = [
+  "python-multipart>=0.0.6"
+]
 dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1",
   "build>=1.2",
   "twine>=5.0",
   "tox>=4.0",
-  "packaging>=21.0"
+  "packaging>=21.0",
+  "python-multipart>=0.0.6"
 ]
 
 [project.scripts]

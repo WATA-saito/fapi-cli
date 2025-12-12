@@ -46,6 +46,8 @@ class RequestConfig:
     headers: Dict[str, str]
     query: List[Tuple[str, str]]
     json_body: Optional[Any]
+    form_data: Optional[Dict[str, str]]
+    files: Optional[Dict[str, Tuple[str, bytes, Optional[str]]]]
     include_headers: bool
 
 
@@ -88,6 +90,89 @@ def _parse_json(data: Optional[str]) -> Optional[Any]:
         return json.loads(data)
     except json.JSONDecodeError as exc:
         raise CLIError(f"JSONの解析に失敗しました: {exc.msg}") from exc
+
+
+def _check_multipart_installed() -> None:
+    """python-multipart がインストールされているか確認する。"""
+    try:
+        import python_multipart  # noqa: F401
+    except ImportError:
+        raise CLIError(
+            "-F (--form) オプションを使用するには 'python-multipart' が必要です。\n"
+            "以下のコマンドでインストールしてください:\n\n"
+            "  pip install 'fapi-cli[form]'\n\n"
+            "または:\n\n"
+            "  pip install python-multipart"
+        )
+
+
+def _parse_form(
+    raw_form: Sequence[str],
+) -> Tuple[Dict[str, str], Dict[str, Tuple[str, bytes, Optional[str]]]]:
+    """フォームデータとファイルを解析する。
+
+    Args:
+        raw_form: -F オプションで指定された値のリスト
+
+    Returns:
+        (form_data, files) のタプル
+        - form_data: フォームフィールドの辞書
+        - files: ファイルアップロード情報の辞書
+          {field_name: (filename, content, content_type)}
+    """
+    form_data: Dict[str, str] = {}
+    files: Dict[str, Tuple[str, bytes, Optional[str]]] = {}
+
+    for item in raw_form:
+        if "=" not in item:
+            raise CLIError(
+                f"-F オプションの形式が無効です: '{item}'。'key=value' または "
+                f"'key=@path' の形式を使用してください。"
+            )
+
+        key, value = item.split("=", 1)
+        key = key.strip()
+
+        if not key:
+            raise CLIError(f"-F オプションのキーが空です: '{item}'。")
+
+        if value.startswith("@"):
+            # ファイルアップロード: key=@path または key=@path;type=xxx;filename=yyy
+            file_spec = value[1:]  # '@' を除去
+
+            # メタデータの解析: ;type= と ;filename=
+            content_type: Optional[str] = None
+            custom_filename: Optional[str] = None
+            file_path_str = file_spec
+
+            # セミコロンで分割してメタデータを解析
+            if ";" in file_spec:
+                parts = file_spec.split(";")
+                file_path_str = parts[0]
+                for part in parts[1:]:
+                    part = part.strip()
+                    if part.startswith("type="):
+                        content_type = part[5:]
+                    elif part.startswith("filename="):
+                        custom_filename = part[9:]
+
+            # ファイルの存在確認と読み込み
+            file_path = Path(file_path_str)
+            if not file_path.exists():
+                raise CLIError(f"ファイルが見つかりません: {file_path}")
+
+            try:
+                file_content = file_path.read_bytes()
+            except OSError as exc:
+                raise CLIError(f"ファイルの読み込みに失敗しました: {file_path} - {exc}") from exc
+
+            filename = custom_filename if custom_filename else file_path.name
+            files[key] = (filename, file_content, content_type)
+        else:
+            # 通常のフォームフィールド
+            form_data[key] = value
+
+    return form_data, files
 
 
 def _validate_method(method: str) -> str:
@@ -146,12 +231,24 @@ def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
 
 def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, Any]:
     client = TestClient(fastapi_app)
+
+    # files パラメータの形式を TestClient 用に変換
+    # TestClient expects: {field_name: (filename, content, content_type)}
+    files_param = None
+    if config.files:
+        files_param = {
+            field: (filename, content, content_type) if content_type else (filename, content)
+            for field, (filename, content, content_type) in config.files.items()
+        }
+
     response = client.request(
         config.method,
         config.path,
         headers=config.headers,
         params=config.query or None,
         json=config.json_body,
+        data=config.form_data or None,
+        files=files_param,
     )
 
     try:
@@ -189,6 +286,16 @@ def request(
     data: Optional[str] = typer.Option(
         None, "--data", "-d", help="JSON形式のリクエストボディ"
     ),
+    form: List[str] = typer.Option(
+        [],
+        "--form",
+        "-F",
+        help=(
+            "フォームデータまたはファイル (複数指定可)。"
+            "フォーム: 'key=value'、ファイル: 'key=@path'。"
+            "ファイルには ';type=mime' や ';filename=name' を追加可能。"
+        ),
+    ),
     header: List[str] = typer.Option(
         [],
         "--header",
@@ -213,11 +320,28 @@ def request(
     """FastAPIアプリケーションに対してHTTPリクエストを送信する。"""
 
     try:
+        # -d と -F の排他制御
+        if data is not None and form:
+            raise CLIError(
+                "-d (--data) と -F (--form) は同時に指定できません。"
+                "JSON を送信する場合は -d を、フォームデータやファイルを送信する場合は -F を使用してください。"
+            )
+
         normalized_method = _validate_method(method)
         normalized_path = _normalize_path(path)
         headers = _parse_headers(header)
         query_params = _parse_query(query)
         json_body = _parse_json(data)
+
+        # フォームデータとファイルの解析
+        form_data: Optional[Dict[str, str]] = None
+        files: Optional[Dict[str, Tuple[str, bytes, Optional[str]]]] = None
+        if form:
+            _check_multipart_installed()
+            form_data, files = _parse_form(form)
+            # 空の場合は None に
+            form_data = form_data or None
+            files = files or None
 
         fastapi_app = load_application(app_file, app_name=app_name)
         config = RequestConfig(
@@ -226,6 +350,8 @@ def request(
             headers=headers,
             query=query_params,
             json_body=json_body,
+            form_data=form_data,
+            files=files,
             include_headers=include_headers,
         )
 
