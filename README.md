@@ -30,6 +30,14 @@ pipx install fapi-cli
 uvx fapi-cli request main.py -P /
 ```
 
+> **Note (uvx / TestPyPI)**: TestPyPI では依存解決の都合で未検証の依存バージョンを拾ってしまうことがあります（特にプレリリース配布時）。
+> その場合は、明示的に依存を固定して回避してください。例:
+>
+> ```bash
+> uvx fapi-cli request main.py -P / --with "fastapi<1.0"
+> uvx fapi-cli request main.py -P / -F "name=Alice" --with "fastapi<1.0" --with "python-multipart<1.0"
+> ```
+
 ## 要件
 
 - Python 3.9以上
@@ -66,6 +74,9 @@ fapi-cli request src/api.py --app-name fastapi_app
 # フォームフィールドを送信
 fapi-cli request src/main.py -X POST -P /form -F "name=Alice" -F "age=30"
 
+# 同一キーを複数回指定（例: List[str] を受け取る Form）
+fapi-cli request src/main.py -X POST -P /tags -F "tag=python" -F "tag=fastapi"
+
 # ファイルをアップロード（@記法）
 fapi-cli request src/main.py -X POST -P /upload -F "file=@./image.png"
 
@@ -77,6 +88,9 @@ fapi-cli request src/main.py -X POST -P /upload -F "file=@./temp.txt;filename=re
 
 # フォームフィールドとファイルを同時に送信
 fapi-cli request src/main.py -X POST -P /profile -F "name=Alice" -F "avatar=@./photo.jpg"
+
+# 同一キーで複数ファイルをアップロード（例: List[UploadFile] を受け取る File）
+fapi-cli request src/main.py -X POST -P /upload-many -F "files=@./a.txt" -F "files=@./b.txt"
 ```
 
 > **Note**: `-d`（JSONボディ）と `-F`（フォームデータ）は同時に指定できません。
