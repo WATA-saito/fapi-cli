@@ -6,6 +6,7 @@ FastAPIアプリケーションに対してサーバーを起動せずにHTTPリ
 
 - `fapi-cli request` コマンドで任意のFastAPIアプリケーションにリクエストを送信
 - `-X/--method`, `-P/--path`, `-d/--data`, `-H/--header`, `-q/--query` といったcurl互換のオプション
+- `-F/--form` でフォームデータとファイルアップロードに対応（`multipart/form-data`）
 - JSONレスポンスを整形して標準出力に表示
 - `--include-headers` でレスポンスヘッダーも表示可能
 
@@ -50,6 +51,35 @@ fapi-cli request src/main.py -H "Authorization: Bearer token" -q "page=1"
 # アプリケーションの変数名が app 以外の場合
 fapi-cli request src/api.py --app-name fastapi_app
 ```
+
+### フォームデータとファイルアップロード
+
+`-F` オプションでフォームデータやファイルを送信できます（curlの`-F`オプションと同等）。
+
+> **Note**: フォーム機能を使用するには `python-multipart` が必要です。FastAPIアプリケーション側で `Form()` や `File()` を使用している場合はすでにインストールされているはずです。そうでない場合は以下のコマンドでインストールしてください：
+>
+> ```bash
+> pip install 'fapi-cli[form]'
+> ```
+
+```bash
+# フォームフィールドを送信
+fapi-cli request src/main.py -X POST -P /form -F "name=Alice" -F "age=30"
+
+# ファイルをアップロード（@記法）
+fapi-cli request src/main.py -X POST -P /upload -F "file=@./image.png"
+
+# Content-Type を指定
+fapi-cli request src/main.py -X POST -P /upload -F "document=@./file.pdf;type=application/pdf"
+
+# ファイル名を変更
+fapi-cli request src/main.py -X POST -P /upload -F "file=@./temp.txt;filename=report.txt"
+
+# フォームフィールドとファイルを同時に送信
+fapi-cli request src/main.py -X POST -P /profile -F "name=Alice" -F "avatar=@./photo.jpg"
+```
+
+> **Note**: `-d`（JSONボディ）と `-F`（フォームデータ）は同時に指定できません。
 
 ## ライセンス
 
