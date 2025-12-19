@@ -27,7 +27,7 @@ classifiers = [
   "Topic :: Utilities"
 ]
 dependencies = [
-  "fastapi>=0.100.0",
+  "fastapi>=0.100.0,<1.0",
   "typer>=0.9.0",
   "httpx>=0.23"
 ]
@@ -41,7 +41,7 @@ Issues = "https://github.com/WATA-saito/fapi-cli/issues"
 
 [project.optional-dependencies]
 form = [
-  "python-multipart>=0.0.6"
+  "python-multipart>=0.0.6,<1.0"
 ]
 dev = [
   "pytest>=7.4",
@@ -50,7 +50,7 @@ dev = [
   "twine>=5.0",
   "tox>=4.0",
   "packaging>=21.0",
-  "python-multipart>=0.0.6"
+  "python-multipart>=0.0.6,<1.0"
 ]
 
 [project.scripts]

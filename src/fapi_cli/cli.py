@@ -46,8 +46,13 @@ class RequestConfig:
     headers: Dict[str, str]
     query: List[Tuple[str, str]]
     json_body: Optional[Any]
-    form_data: Optional[Dict[str, str]]
-    files: Optional[Dict[str, Tuple[str, bytes, Optional[str]]]]
+    # `httpx`/`requests` compatible multi-dict style
+    # - data: List[Tuple[key, value]]
+    # - files: List[Tuple[field_name, file_tuple]]
+    #
+    # NOTE: 同一キー複数指定（例: -F tag=python -F tag=fastapi）を保持するため dict ではなく list を使う。
+    form_data: Optional[List[Tuple[str, str]]]
+    files: Optional[List[Tuple[str, Tuple[str, bytes, Optional[str]]]]]
     include_headers: bool
 
 
@@ -108,7 +113,7 @@ def _check_multipart_installed() -> None:
 
 def _parse_form(
     raw_form: Sequence[str],
-) -> Tuple[Dict[str, str], Dict[str, Tuple[str, bytes, Optional[str]]]]:
+) -> Tuple[List[Tuple[str, str]], List[Tuple[str, Tuple[str, bytes, Optional[str]]]]]:
     """フォームデータとファイルを解析する。
 
     Args:
@@ -116,12 +121,12 @@ def _parse_form(
 
     Returns:
         (form_data, files) のタプル
-        - form_data: フォームフィールドの辞書
-        - files: ファイルアップロード情報の辞書
-          {field_name: (filename, content, content_type)}
+        - form_data: フォームフィールドのリスト（同一キー複数指定を保持）
+        - files: ファイルアップロード情報のリスト（同一キー複数指定を保持）
+          [(field_name, (filename, content, content_type)), ...]
     """
-    form_data: Dict[str, str] = {}
-    files: Dict[str, Tuple[str, bytes, Optional[str]]] = {}
+    form_data: List[Tuple[str, str]] = []
+    files: List[Tuple[str, Tuple[str, bytes, Optional[str]]]] = []
 
     for item in raw_form:
         if "=" not in item:
@@ -169,10 +174,10 @@ def _parse_form(
                 ) from exc
 
             filename = custom_filename if custom_filename else file_path.name
-            files[key] = (filename, file_content, content_type)
+            files.append((key, (filename, file_content, content_type)))
         else:
             # 通常のフォームフィールド
-            form_data[key] = value
+            form_data.append((key, value))
 
     return form_data, files
 
@@ -234,16 +239,28 @@ def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
 def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, Any]:
     client = TestClient(fastapi_app)
 
-    # files パラメータの形式を TestClient 用に変換
-    # TestClient expects: {field_name: (filename, content, content_type)}
-    files_param = None
-    if config.files:
-        files_param = {
-            field: (filename, content, content_type)
-            if content_type
-            else (filename, content)
-            for field, (filename, content, content_type) in config.files.items()
-        }
+    # `-F` 指定時は常に multipart/form-data として送る（curl 互換）
+    # httpx は `files=` に list-of-tuples を渡すと multipart になる。
+    # かつ、同一キー複数指定を扱えるよう dict ではなく list で渡す。
+    files_param: Optional[List[Tuple[str, Any]]] = None
+    data_param: Optional[Any] = config.form_data or None
+
+    if config.form_data or config.files:
+        files_param = []
+        data_param = None
+
+        # フォームフィールド（ファイル名 None）として multipart に含める
+        if config.form_data:
+            for key, value in config.form_data:
+                files_param.append((key, (None, value)))
+
+        # ファイルアップロードを multipart に含める
+        if config.files:
+            for field, (filename, content, content_type) in config.files:
+                if content_type:
+                    files_param.append((field, (filename, content, content_type)))
+                else:
+                    files_param.append((field, (filename, content)))
 
     response = client.request(
         config.method,
@@ -251,7 +268,7 @@ def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, A
         headers=config.headers,
         params=config.query or None,
         json=config.json_body,
-        data=config.form_data or None,
+        data=data_param,
         files=files_param,
     )
 
@@ -338,8 +355,8 @@ def request(
         json_body = _parse_json(data)
 
         # フォームデータとファイルの解析
-        form_data: Optional[Dict[str, str]] = None
-        files: Optional[Dict[str, Tuple[str, bytes, Optional[str]]]] = None
+        form_data: Optional[List[Tuple[str, str]]] = None
+        files: Optional[List[Tuple[str, Tuple[str, bytes, Optional[str]]]]] = None
         if form:
             _check_multipart_installed()
             form_data, files = _parse_form(form)

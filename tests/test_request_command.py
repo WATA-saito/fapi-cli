@@ -223,7 +223,7 @@ def test_headers(tmp_path: Path, header_option: List[str]) -> None:
 def _form_app() -> str:
     return """
     from fastapi import FastAPI, Form, File, UploadFile
-    from typing import Optional
+    from typing import List, Optional
 
     app = FastAPI()
 
@@ -261,6 +261,14 @@ def _form_app() -> str:
             "file1": file1.filename,
             "file2": file2.filename,
         }
+
+    @app.post("/tags")
+    def tags(tag: List[str] = Form(...)):
+        return {"tag": tag}
+
+    @app.post("/upload-many")
+    def upload_many(files: List[UploadFile] = File(...)):
+        return {"filenames": [f.filename for f in files]}
     """
 
 
@@ -455,6 +463,61 @@ def test_multiple_file_upload(tmp_path: Path) -> None:
     assert payload["status_code"] == 200
     assert payload["body"]["file1"] == "file1.txt"
     assert payload["body"]["file2"] == "file2.txt"
+
+
+def test_multiple_form_fields_same_key(tmp_path: Path) -> None:
+    """同一キー複数指定（フォーム）のテスト: -F tag=python -F tag=fastapi"""
+    app_path = _write_app(tmp_path, _form_app())
+
+    result = _invoke(
+        [
+            "request",
+            str(app_path),
+            "-X",
+            "POST",
+            "-P",
+            "/tags",
+            "-F",
+            "tag=python",
+            "-F",
+            "tag=fastapi",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["status_code"] == 200
+    assert payload["body"] == {"tag": ["python", "fastapi"]}
+
+
+def test_multiple_file_uploads_same_key(tmp_path: Path) -> None:
+    """同一キー複数指定（ファイル）のテスト: -F files=@a -F files=@b"""
+    app_path = _write_app(tmp_path, _form_app())
+
+    file1 = tmp_path / "a.txt"
+    file1.write_text("a")
+    file2 = tmp_path / "b.txt"
+    file2.write_text("b")
+
+    result = _invoke(
+        [
+            "request",
+            str(app_path),
+            "-X",
+            "POST",
+            "-P",
+            "/upload-many",
+            "-F",
+            f"files=@{file1}",
+            "-F",
+            f"files=@{file2}",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["status_code"] == 200
+    assert payload["body"] == {"filenames": ["a.txt", "b.txt"]}
 
 
 # ============================================================================
