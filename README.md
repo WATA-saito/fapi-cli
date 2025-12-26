@@ -1,6 +1,6 @@
 # fapi-cli
 
-FastAPIアプリケーションに対してサーバーを起動せずにHTTPリクエストを送信できるCLIツールです。`fastapi.testclient.TestClient`を活用して、ローカルファイルからFastAPIアプリケーションを読み込み、curlライクなインターフェースでエンドポイントを呼び出します。
+FastAPIアプリケーションに対してサーバーを起動せずにHTTPリクエストを送信できるCLIツールです。ローカルファイルからFastAPIアプリケーションを読み込み、`httpx` の ASGI transport 経由で、curlライクなインターフェースでエンドポイントを呼び出します。
 
 ## 特長
 
@@ -9,6 +9,8 @@ FastAPIアプリケーションに対してサーバーを起動せずにHTTPリ
 - `-F/--form` でフォームデータとファイルアップロードに対応（`multipart/form-data`）
 - JSONレスポンスを整形して標準出力に表示
 - `--include-headers` でレスポンスヘッダーも表示可能
+
+> **Note**: `starlette` の `TestClient` と `httpx` のバージョン組み合わせによっては互換性問題が発生することがあります。本ツールは `httpx` の ASGI transport を使って直接ASGIアプリを呼び出すため、そうした差分の影響を受けにくい設計です。
 
 ## インストール
 
