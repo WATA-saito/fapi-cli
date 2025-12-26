@@ -11,9 +11,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 from urllib.parse import parse_qsl
 
+import anyio
+import httpx
 import typer
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 
 app = typer.Typer(
@@ -236,41 +237,52 @@ def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
     )
 
 
-def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, Any]:
-    client = TestClient(fastapi_app)
+async def _execute_request_async(
+    fastapi_app: FastAPI, config: RequestConfig
+) -> Dict[str, Any]:
+    # NOTE:
+    # - 以前は `fastapi.testclient.TestClient` を使用していたが、
+    #   Starlette の TestClient 実装が httpx のバージョン互換に影響される（httpx 0.28 で `app=` が削除）ため、
+    #   ここでは httpx の `ASGITransport` を使い直接 ASGI アプリへリクエストする。
+    transport = httpx.ASGITransport(app=fastapi_app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+        follow_redirects=True,
+    ) as client:
 
-    # `-F` 指定時は常に multipart/form-data として送る（curl 互換）
-    # httpx は `files=` に list-of-tuples を渡すと multipart になる。
-    # かつ、同一キー複数指定を扱えるよう dict ではなく list で渡す。
-    files_param: Optional[List[Tuple[str, Any]]] = None
-    data_param: Optional[Any] = config.form_data or None
+        # `-F` 指定時は常に multipart/form-data として送る（curl 互換）
+        # httpx は `files=` に list-of-tuples を渡すと multipart になる。
+        # かつ、同一キー複数指定を扱えるよう dict ではなく list で渡す。
+        files_param: Optional[List[Tuple[str, Any]]] = None
+        data_param: Optional[Any] = config.form_data or None
 
-    if config.form_data or config.files:
-        files_param = []
-        data_param = None
+        if config.form_data or config.files:
+            files_param = []
+            data_param = None
 
-        # フォームフィールド（ファイル名 None）として multipart に含める
-        if config.form_data:
-            for key, value in config.form_data:
-                files_param.append((key, (None, value)))
+            # フォームフィールド（ファイル名 None）として multipart に含める
+            if config.form_data:
+                for key, value in config.form_data:
+                    files_param.append((key, (None, value)))
 
-        # ファイルアップロードを multipart に含める
-        if config.files:
-            for field, (filename, content, content_type) in config.files:
-                if content_type:
-                    files_param.append((field, (filename, content, content_type)))
-                else:
-                    files_param.append((field, (filename, content)))
+            # ファイルアップロードを multipart に含める
+            if config.files:
+                for field, (filename, content, content_type) in config.files:
+                    if content_type:
+                        files_param.append((field, (filename, content, content_type)))
+                    else:
+                        files_param.append((field, (filename, content)))
 
-    response = client.request(
-        config.method,
-        config.path,
-        headers=config.headers,
-        params=config.query or None,
-        json=config.json_body,
-        data=data_param,
-        files=files_param,
-    )
+        response = await client.request(
+            config.method,
+            config.path,
+            headers=config.headers,
+            params=config.query or None,
+            json=config.json_body,
+            data=data_param,
+            files=files_param,
+        )
 
     try:
         body: Any = response.json()
@@ -286,6 +298,10 @@ def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, A
         result["headers"] = dict(response.headers)
 
     return result
+
+
+def _execute_request(fastapi_app: FastAPI, config: RequestConfig) -> Dict[str, Any]:
+    return anyio.run(_execute_request_async, fastapi_app, config)
 
 
 def _emit_json(data: Dict[str, Any]) -> None:
