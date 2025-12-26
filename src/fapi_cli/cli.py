@@ -250,7 +250,6 @@ async def _execute_request_async(
         base_url="http://testserver",
         follow_redirects=True,
     ) as client:
-
         # `-F` 指定時は常に multipart/form-data として送る（curl 互換）
         # httpx は `files=` に list-of-tuples を渡すと multipart になる。
         # かつ、同一キー複数指定を扱えるよう dict ではなく list で渡す。
