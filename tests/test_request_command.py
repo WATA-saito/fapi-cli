@@ -645,3 +645,33 @@ def test_form_without_multipart_installed(
     assert result.exit_code == 1
     assert "python-multipart" in result.output
     assert "fapi-cli[form]" in result.output
+
+
+def test_streaming_response_support(tmp_path: Path) -> None:
+    """StreamingResponse を --stream で逐次出力できることを確認する。"""
+    app_path = _write_app(
+        tmp_path,
+        """
+        from fastapi import FastAPI
+        from fastapi.responses import StreamingResponse
+
+        app = FastAPI()
+
+        def gen():
+            yield "hello"
+            yield " "
+            yield "world"
+
+        @app.get("/stream")
+        def stream():
+            return StreamingResponse(gen(), media_type="text/plain")
+        """,
+    )
+
+    result = _invoke(["request", str(app_path), "-P", "/stream", "--stream"])
+
+    assert result.exit_code == 0, result.output
+    # ボディは stdout にそのまま出る
+    assert result.stdout == "hello world"
+    # メタ情報は stderr に JSON として出る（click は output に結合されることがあるため緩めに確認）
+    assert "status_code" in result.output

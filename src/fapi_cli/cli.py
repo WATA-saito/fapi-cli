@@ -55,6 +55,7 @@ class RequestConfig:
     form_data: Optional[List[Tuple[str, str]]]
     files: Optional[List[Tuple[str, Tuple[str, bytes, Optional[str]]]]]
     include_headers: bool
+    stream: bool
 
 
 def _normalize_path(path: str) -> str:
@@ -273,6 +274,29 @@ async def _execute_request_async(
                     else:
                         files_param.append((field, (filename, content)))
 
+        if config.stream:
+            async with client.stream(
+                config.method,
+                config.path,
+                headers=config.headers,
+                params=config.query or None,
+                json=config.json_body,
+                data=data_param,
+                files=files_param,
+            ) as response:
+                meta: Dict[str, Any] = {"status_code": response.status_code}
+                if config.include_headers:
+                    meta["headers"] = dict(response.headers)
+
+                # NOTE:
+                # - 逐次出力を stdout に書き、メタ情報は stderr に JSON で出す。
+                # - Typer/CliRunner のキャプチャ互換のため、bytes ではなく text として扱う。
+                typer.echo(json.dumps(meta, ensure_ascii=False), err=True)
+                async for chunk in response.aiter_text():
+                    if chunk:
+                        typer.echo(chunk, nl=False)
+                return {"status_code": response.status_code, "streamed": True}
+
         response = await client.request(
             config.method,
             config.path,
@@ -347,6 +371,14 @@ def request(
     include_headers: bool = typer.Option(
         False, "--include-headers", help="レスポンスヘッダーを出力に含める"
     ),
+    stream: bool = typer.Option(
+        False,
+        "--stream",
+        help=(
+            "レスポンスボディをストリームとして逐次標準出力に出力します。"
+            "この場合、ステータスコードやヘッダー等のメタ情報は標準エラーに JSON で出力されます。"
+        ),
+    ),
     app_name: Optional[str] = typer.Option(
         None,
         "--app-name",
@@ -389,10 +421,12 @@ def request(
             form_data=form_data,
             files=files,
             include_headers=include_headers,
+            stream=stream,
         )
 
         result = _execute_request(fastapi_app, config)
-        _emit_json(result)
+        if not stream:
+            _emit_json(result)
     except CLIError as exc:
         _handle_cli_error(exc)
         raise typer.Exit(code=1) from exc
