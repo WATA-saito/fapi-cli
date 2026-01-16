@@ -66,9 +66,7 @@ def _parse_headers(raw_headers: Sequence[str]) -> Dict[str, str]:
     headers: Dict[str, str] = {}
     for header in raw_headers:
         if ":" not in header:
-            raise CLIError(
-                f"Invalid header format: '{header}'. Use 'Key: Value'."
-            )
+            raise CLIError(f"Invalid header format: '{header}'. Use 'Key: Value'.")
         key, value = header.split(":", 1)
         key = key.strip()
         value = value.strip()
@@ -167,9 +165,7 @@ def _parse_form(
             try:
                 file_content = file_path.read_bytes()
             except OSError as exc:
-                raise CLIError(
-                    f"Failed to read file: {file_path} - {exc}"
-                ) from exc
+                raise CLIError(f"Failed to read file: {file_path} - {exc}") from exc
 
             filename = custom_filename if custom_filename else file_path.name
             files.append((key, (filename, file_content, content_type)))
@@ -211,9 +207,7 @@ def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
         spec.loader.exec_module(module)
     except Exception as exc:  # pragma: no cover - ログ用の詳細メッセージ
         trace = "".join(traceback.format_exception(exc))
-        raise CLIError(
-            f"Failed to load FastAPI application: {exc}\n{trace}"
-        ) from exc
+        raise CLIError(f"Failed to load FastAPI application: {exc}\n{trace}") from exc
 
     candidate_names: Iterable[str]
     if app_name:
@@ -317,9 +311,7 @@ def request(
     ),
     path: str = typer.Option("/", "--path", "-P", help="Request path"),
     method: str = typer.Option("GET", "--method", "-X", help="HTTP method"),
-    data: Optional[str] = typer.Option(
-        None, "--data", "-d", help="JSON request body"
-    ),
+    data: Optional[str] = typer.Option(None, "--data", "-d", help="JSON request body"),
     form: List[str] = typer.Option(
         [],
         "--form",
