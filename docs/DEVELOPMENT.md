@@ -1,6 +1,6 @@
-# 開発者向けドキュメント
+# Developer documentation
 
-## 開発用インストール
+## Development installation
 
 ```bash
 python -m venv .venv
@@ -8,7 +8,7 @@ source .venv/bin/activate
 pip install -e .[dev]
 ```
 
-## 開発
+## Development
 
 ```bash
 source .venv/bin/activate
@@ -16,124 +16,124 @@ pip install -e .[dev]
 pytest
 ```
 
-## 複数バージョンでのテスト
+## Testing across multiple versions
 
-このプロジェクトは複数のFastAPIバージョンでテストされています。
+This project is tested across multiple FastAPI versions.
 
-### toxを使用したテスト
+### Testing with tox
 
 ```bash
-# すべての環境でテストを実行
+# Run tests in all environments
 tox
 
-# 特定のPythonバージョンとFastAPIバージョンの組み合わせでテスト
+# Run a specific Python/FastAPI combo
 tox -e py312-fastapilatest
 ```
 
-### サポートされているFastAPIバージョン
+### Supported FastAPI versions
 
-- FastAPI 0.100.0以上、0.115.0未満
-- FastAPI 0.115.0以上、0.120.0未満
-- FastAPI 0.120.0以上（最新）
+- FastAPI >= 0.100.0, < 0.115.0
+- FastAPI >= 0.115.0, < 0.120.0
+- FastAPI >= 0.120.0 (latest)
 
-CIでは、Python 3.9、3.10、3.11、3.12、3.13、3.14と上記のFastAPIバージョンの組み合わせでテストが実行されます。
+In CI, tests run across combinations of Python 3.9, 3.10, 3.11, 3.12, 3.13, 3.14 and the FastAPI ranges above.
 
-## パッケージング
+## Packaging
 
-### ローカルでのビルド
+### Local build
 
 ```bash
 python -m build
 twine check dist/*
 ```
 
-### ローカルからのアップロード（手動）
+### Upload from local (manual)
 
-事前に`~/.pypirc`を設定した上で以下のコマンドを実行してください。
+Before running the commands below, configure `~/.pypirc`.
 
 ```bash
-# TestPyPIへアップロード
+# Upload to TestPyPI
 twine upload --repository testpypi dist/*
 
-# PyPIへアップロード
+# Upload to PyPI
 twine upload dist/*
 ```
 
-## リリースフロー
+## Release flow
 
-このプロジェクトはGitタグベースでバージョン管理を行い、GitHub Actionsで自動リリースします。
+This project uses Git tag-based versioning and GitHub Actions for automated releases.
 
-### バージョン管理
+### Versioning
 
-- バージョンはGitタグから自動取得されます（hatch-vcs使用）
-- タグ形式: `v0.1.0`, `v1.2.3`（セマンティックバージョニング）
+- Versions are automatically derived from Git tags (via hatch-vcs)
+- Tag format: `v0.1.0`, `v1.2.3` (semantic versioning)
 
-### TestPyPIへのリリース（テスト用）
+### Release to TestPyPI (for testing)
 
 ```bash
-# プレリリースタグを作成
+# Create a pre-release tag
 git tag v0.1.0-rc1
 git push origin v0.1.0-rc1
 ```
 
-または、GitHub Actionsから手動でワークフローを実行できます。
+Alternatively, you can run the workflow manually from GitHub Actions.
 
-### 本番PyPIへのリリース
+### Release to PyPI (production)
 
 ```bash
-# 正式リリースタグを作成
+# Create a stable release tag
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-これにより以下が自動実行されます：
-1. テスト実行（Python 3.9, 3.14）
-2. パッケージビルド
-3. PyPIへ公開
-4. GitHubリリースノート作成
+This triggers:
+1. Tests (Python 3.9, 3.14)
+2. Package build
+3. Publish to PyPI
+4. Create GitHub release notes
 
-## PyPI/TestPyPI 初期設定（Trusted Publisher）
+## Initial setup for PyPI/TestPyPI (Trusted Publisher)
 
-GitHub Actionsから安全にパッケージを公開するため、Trusted Publisherを設定します。
+To publish packages safely from GitHub Actions, configure a Trusted Publisher.
 
-### 1. PyPI/TestPyPIアカウント作成
+### 1. Create PyPI/TestPyPI accounts
 
 - PyPI: https://pypi.org/account/register/
 - TestPyPI: https://test.pypi.org/account/register/
 
-### 2. TestPyPI Trusted Publisher設定
+### 2. Configure TestPyPI Trusted Publisher
 
-1. https://test.pypi.org/manage/account/publishing/ にアクセス
-2. 「Add a new pending publisher」で以下を入力:
+1. Go to https://test.pypi.org/manage/account/publishing/
+2. Click "Add a new pending publisher" and fill in:
    - PyPI Project Name: `fapi-cli`
-   - Owner: `WATA-saito`（GitHubユーザー名）
+   - Owner: `WATA-saito` (GitHub username)
    - Repository name: `fapi-cli`
    - Workflow name: `publish-testpypi.yml`
    - Environment name: `testpypi`
 
-### 3. PyPI Trusted Publisher設定
+### 3. Configure PyPI Trusted Publisher
 
-1. https://pypi.org/manage/account/publishing/ にアクセス
-2. 「Add a new pending publisher」で以下を入力:
+1. Go to https://pypi.org/manage/account/publishing/
+2. Click "Add a new pending publisher" and fill in:
    - PyPI Project Name: `fapi-cli`
-   - Owner: `WATA-saito`（GitHubユーザー名）
+   - Owner: `WATA-saito` (GitHub username)
    - Repository name: `fapi-cli`
    - Workflow name: `release.yml`
    - Environment name: `pypi`
 
-### 4. GitHub Environments設定
+### 4. Configure GitHub Environments
 
-1. リポジトリの Settings → Environments
-2. `testpypi` と `pypi` の2つのEnvironmentを作成
-3. 必要に応じて保護ルール（承認者など）を設定
+1. Repository Settings → Environments
+2. Create `testpypi` and `pypi`
+3. Configure protection rules as needed (e.g., required reviewers)
 
-### 5. 初回リリーステスト
+### 5. First release test
 
 ```bash
-# TestPyPIでテスト
+# Test with TestPyPI
 git tag v0.1.0-rc1
 git push origin v0.1.0-rc1
 
-# TestPyPIからインストールして動作確認
+# Install from TestPyPI and verify
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ fapi-cli
 ```

@@ -154,7 +154,7 @@ def test_invalid_json_body(tmp_path: Path) -> None:
     result = _invoke(["request", str(app_path), "-d", "{invalid"])
 
     assert result.exit_code == 1
-    assert "JSON" in result.output
+    assert "Failed to parse JSON" in result.output
 
 
 def test_invalid_method(tmp_path: Path) -> None:
@@ -162,7 +162,7 @@ def test_invalid_method(tmp_path: Path) -> None:
     result = _invoke(["request", str(app_path), "-X", "INVALID"])
 
     assert result.exit_code == 1
-    assert "HTTPメソッド" in result.output
+    assert "Invalid HTTP method" in result.output
 
 
 def test_missing_file(tmp_path: Path) -> None:
@@ -170,7 +170,7 @@ def test_missing_file(tmp_path: Path) -> None:
     result = _invoke(["request", str(missing)])
 
     assert result.exit_code == 1
-    assert "見つかりません" in result.output
+    assert "Application file not found" in result.output
 
 
 def test_invalid_app(tmp_path: Path) -> None:
@@ -186,7 +186,7 @@ def test_invalid_app(tmp_path: Path) -> None:
     result = _invoke(["request", str(app_path)])
 
     assert result.exit_code == 1
-    assert "アプリケーション" in result.output
+    assert "FastAPI application not found" in result.output
 
 
 @pytest.mark.parametrize("header_option", [["Authorization: Bearer token"]])
@@ -543,7 +543,7 @@ def test_form_file_not_found(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 1
-    assert "見つかりません" in result.output
+    assert "File not found" in result.output
 
 
 def test_form_invalid_format(tmp_path: Path) -> None:
@@ -564,7 +564,7 @@ def test_form_invalid_format(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 1
-    assert "-F オプションの形式が無効です" in result.output
+    assert "Invalid -F/--form value" in result.output
 
 
 def test_form_empty_key(tmp_path: Path) -> None:
@@ -585,7 +585,7 @@ def test_form_empty_key(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 1
-    assert "キーが空です" in result.output
+    assert "empty key" in result.output
 
 
 def test_data_and_form_exclusive(tmp_path: Path) -> None:
@@ -608,7 +608,7 @@ def test_data_and_form_exclusive(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 1
-    assert "同時に指定できません" in result.output
+    assert "cannot be used together" in result.output
 
 
 def test_form_without_multipart_installed(
