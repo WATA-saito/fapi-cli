@@ -1,4 +1,4 @@
-"""FastAPI CLIツールのパッケージエントリ。"""
+"""Package entry for fapi-cli."""
 
 __all__ = ["__version__"]
 

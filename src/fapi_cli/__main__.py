@@ -1,10 +1,10 @@
-"""fapi-cliのエントリーポイント。"""
+"""Entry point for fapi-cli."""
 
 from .cli import app
 
 
 def main() -> None:
-    """CLIアプリケーションを実行する。"""
+    """Run the CLI application."""
 
     app()
 

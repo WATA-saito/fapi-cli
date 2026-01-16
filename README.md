@@ -1,102 +1,101 @@
 # fapi-cli
 
-FastAPIアプリケーションに対してサーバーを起動せずにHTTPリクエストを送信できるCLIツールです。ローカルファイルからFastAPIアプリケーションを読み込み、`httpx` の ASGI transport 経由で、curlライクなインターフェースでエンドポイントを呼び出します。
+CLI tool to invoke FastAPI endpoints **without starting a server**. It loads a FastAPI application from a local Python file and calls the ASGI app directly via `httpx` ASGI transport, providing a curl-like interface.
 
-## 特長
+## Features
 
-- `fapi-cli request` コマンドで任意のFastAPIアプリケーションにリクエストを送信
-- `-X/--method`, `-P/--path`, `-d/--data`, `-H/--header`, `-q/--query` といったcurl互換のオプション
-- `-F/--form` でフォームデータとファイルアップロードに対応（`multipart/form-data`）
-- JSONレスポンスを整形して標準出力に表示
-- `--include-headers` でレスポンスヘッダーも表示可能
+- Send requests to any FastAPI application with `fapi-cli request`
+- curl-like options: `-X/--method`, `-P/--path`, `-d/--data`, `-H/--header`, `-q/--query`
+- Form fields & file uploads with `-F/--form` (`multipart/form-data`)
+- Pretty-printed JSON response output to stdout
+- Include response headers with `--include-headers`
 
-> **Note**: `starlette` の `TestClient` と `httpx` のバージョン組み合わせによっては互換性問題が発生することがあります。本ツールは `httpx` の ASGI transport を使って直接ASGIアプリを呼び出すため、そうした差分の影響を受けにくい設計です。
+> **Note**: Some combinations of `starlette` TestClient and `httpx` may have compatibility issues. This tool avoids that by calling the ASGI app directly via `httpx` ASGI transport.
 
-## インストール
+## Installation
 
-### PyPIからインストール
+### Install from PyPI
 
 ```bash
 pip install fapi-cli
 ```
 
-### pipxでインストール（推奨）
+### Install with pipx (recommended)
 
 ```bash
 pipx install fapi-cli
 ```
 
-### uvxで一時実行
+### Run with uvx (one-off)
 
 ```bash
 uvx fapi-cli request main.py -P /
 ```
 
-> **Note (uvx / TestPyPI)**: TestPyPI では依存解決の都合で未検証の依存バージョンを拾ってしまうことがあります（特にプレリリース配布時）。
-> その場合は、明示的に依存を固定して回避してください。例:
+> **Note (uvx / TestPyPI)**: On TestPyPI, dependency resolution may pick untested versions (especially for pre-releases). Pin dependencies explicitly if needed. Example:
 >
 > ```bash
 > uvx fapi-cli request main.py -P / --with "fastapi<1.0"
 > uvx fapi-cli request main.py -P / -F "name=Alice" --with "fastapi<1.0" --with "python-multipart<1.0"
 > ```
 
-## 要件
+## Requirements
 
-- Python 3.9以上
-- FastAPI 0.100.0以上
-- FastAPIアプリケーション（テスト対象）
+- Python 3.9+
+- FastAPI 0.100.0+
+- A FastAPI application (target)
 
-## 使い方
+## Usage
 
 ```bash
-# アプリケーションを定義したファイルからGETリクエスト
+# GET request to an app defined in a file
 fapi-cli request src/main.py
 
-# POSTメソッドでJSONボディを送信
+# POST with JSON body
 fapi-cli request src/main.py -X POST -P /items -d '{"name": "Alice"}'
 
-# ヘッダーとクエリパラメータを付与
+# Add headers and query parameters
 fapi-cli request src/main.py -H "Authorization: Bearer token" -q "page=1"
 
-# アプリケーションの変数名が app 以外の場合
+# If your FastAPI variable name is not `app`
 fapi-cli request src/api.py --app-name fastapi_app
 ```
 
-### フォームデータとファイルアップロード
+### Form fields and file uploads
 
-`-F` オプションでフォームデータやファイルを送信できます（curlの`-F`オプションと同等）。
+Use `-F` to send form fields and files (equivalent to curl's `-F`).
 
-> **Note**: フォーム機能を使用するには `python-multipart` が必要です。FastAPIアプリケーション側で `Form()` や `File()` を使用している場合はすでにインストールされているはずです。そうでない場合は以下のコマンドでインストールしてください：
+> **Note**: Form/file support requires `python-multipart`. If your FastAPI app uses `Form()` / `File()`, it’s likely already installed. Otherwise:
 >
 > ```bash
 > pip install 'fapi-cli[form]'
 > ```
 
 ```bash
-# フォームフィールドを送信
+# Send form fields
 fapi-cli request src/main.py -X POST -P /form -F "name=Alice" -F "age=30"
 
-# 同一キーを複数回指定（例: List[str] を受け取る Form）
+# Same key multiple times (e.g., Form(List[str]))
 fapi-cli request src/main.py -X POST -P /tags -F "tag=python" -F "tag=fastapi"
 
-# ファイルをアップロード（@記法）
+# Upload a file (with @ prefix)
 fapi-cli request src/main.py -X POST -P /upload -F "file=@./image.png"
 
-# Content-Type を指定
+# Specify Content-Type
 fapi-cli request src/main.py -X POST -P /upload -F "document=@./file.pdf;type=application/pdf"
 
-# ファイル名を変更
+# Override filename
 fapi-cli request src/main.py -X POST -P /upload -F "file=@./temp.txt;filename=report.txt"
 
-# フォームフィールドとファイルを同時に送信
+# Mix form fields and files
 fapi-cli request src/main.py -X POST -P /profile -F "name=Alice" -F "avatar=@./photo.jpg"
 
-# 同一キーで複数ファイルをアップロード（例: List[UploadFile] を受け取る File）
+# Multiple files under the same key (e.g., File(List[UploadFile]))
 fapi-cli request src/main.py -X POST -P /upload-many -F "files=@./a.txt" -F "files=@./b.txt"
 ```
 
-> **Note**: `-d`（JSONボディ）と `-F`（フォームデータ）は同時に指定できません。
+> **Note**: `-d` (JSON body) and `-F` (form/file) cannot be used together.
 
-## ライセンス
+## License
 
 MIT License

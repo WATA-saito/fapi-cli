@@ -1,4 +1,4 @@
-"""FastAPIアプリケーション向けCLIコマンドの実装。"""
+"""CLI commands for invoking a FastAPI application locally."""
 
 from __future__ import annotations
 
@@ -17,9 +17,7 @@ import typer
 from fastapi import FastAPI
 
 
-app = typer.Typer(
-    help="FastAPIアプリケーションに対してローカルでリクエストを送信します。"
-)
+app = typer.Typer(help="Send requests to a FastAPI application locally.")
 
 DEFAULT_APP_NAMES: Tuple[str, ...] = ("app", "application", "fastapi_app")
 VALID_METHODS: Tuple[str, ...] = (
@@ -35,12 +33,12 @@ VALID_METHODS: Tuple[str, ...] = (
 
 
 class CLIError(RuntimeError):
-    """CLI実行時の回復可能なエラー。"""
+    """Recoverable CLI error."""
 
 
 @dataclass
 class RequestConfig:
-    """リクエスト実行の設定値。"""
+    """Request execution configuration."""
 
     method: str
     path: str
@@ -68,14 +66,12 @@ def _parse_headers(raw_headers: Sequence[str]) -> Dict[str, str]:
     headers: Dict[str, str] = {}
     for header in raw_headers:
         if ":" not in header:
-            raise CLIError(
-                f"ヘッダーの形式が無効です: '{header}'。'Key: Value' の形式を使用してください。"
-            )
+            raise CLIError(f"Invalid header format: '{header}'. Use 'Key: Value'.")
         key, value = header.split(":", 1)
         key = key.strip()
         value = value.strip()
         if not key:
-            raise CLIError(f"ヘッダー名が空です: '{header}'。")
+            raise CLIError(f"Header name is empty: '{header}'.")
         headers[key] = value
     return headers
 
@@ -95,19 +91,19 @@ def _parse_json(data: Optional[str]) -> Optional[Any]:
     try:
         return json.loads(data)
     except json.JSONDecodeError as exc:
-        raise CLIError(f"JSONの解析に失敗しました: {exc.msg}") from exc
+        raise CLIError(f"Failed to parse JSON: {exc.msg}") from exc
 
 
 def _check_multipart_installed() -> None:
-    """python-multipart がインストールされているか確認する。"""
+    """Check whether python-multipart is installed."""
     try:
         import python_multipart  # noqa: F401
     except ImportError:
         raise CLIError(
-            "-F (--form) オプションを使用するには 'python-multipart' が必要です。\n"
-            "以下のコマンドでインストールしてください:\n\n"
+            "The -F/--form option requires 'python-multipart'.\n"
+            "Install it with:\n\n"
             "  pip install 'fapi-cli[form]'\n\n"
-            "または:\n\n"
+            "or:\n\n"
             "  pip install python-multipart"
         )
 
@@ -115,7 +111,7 @@ def _check_multipart_installed() -> None:
 def _parse_form(
     raw_form: Sequence[str],
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, Tuple[str, bytes, Optional[str]]]]]:
-    """フォームデータとファイルを解析する。
+    """Parse form fields and files.
 
     Args:
         raw_form: -F オプションで指定された値のリスト
@@ -132,15 +128,14 @@ def _parse_form(
     for item in raw_form:
         if "=" not in item:
             raise CLIError(
-                f"-F オプションの形式が無効です: '{item}'。'key=value' または "
-                f"'key=@path' の形式を使用してください。"
+                f"Invalid -F/--form value: '{item}'. Use 'key=value' or 'key=@path'."
             )
 
         key, value = item.split("=", 1)
         key = key.strip()
 
         if not key:
-            raise CLIError(f"-F オプションのキーが空です: '{item}'。")
+            raise CLIError(f"Invalid -F/--form value (empty key): '{item}'.")
 
         if value.startswith("@"):
             # ファイルアップロード: key=@path または key=@path;type=xxx;filename=yyy
@@ -165,14 +160,12 @@ def _parse_form(
             # ファイルの存在確認と読み込み
             file_path = Path(file_path_str)
             if not file_path.exists():
-                raise CLIError(f"ファイルが見つかりません: {file_path}")
+                raise CLIError(f"File not found: {file_path}")
 
             try:
                 file_content = file_path.read_bytes()
             except OSError as exc:
-                raise CLIError(
-                    f"ファイルの読み込みに失敗しました: {file_path} - {exc}"
-                ) from exc
+                raise CLIError(f"Failed to read file: {file_path} - {exc}") from exc
 
             filename = custom_filename if custom_filename else file_path.name
             files.append((key, (filename, file_content, content_type)))
@@ -187,22 +180,22 @@ def _validate_method(method: str) -> str:
     normalized = method.upper()
     if normalized not in VALID_METHODS:
         raise CLIError(
-            f"HTTPメソッドが不正です: {method}。対応メソッド: {', '.join(VALID_METHODS)}"
+            f"Invalid HTTP method: {method}. Supported methods: {', '.join(VALID_METHODS)}"
         )
     return normalized
 
 
 def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
-    """指定ファイルからFastAPIアプリケーションを読み込む。"""
+    """Load a FastAPI application instance from a Python file."""
 
     path = Path(file_path)
     if not path.exists():
-        raise CLIError(f"アプリケーションファイルが見つかりません: {path}")
+        raise CLIError(f"Application file not found: {path}")
 
     module_name = path.stem.replace("-", "_")
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
-        raise CLIError(f"モジュールを読み込めませんでした: {path}")
+        raise CLIError(f"Could not load module: {path}")
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -214,9 +207,7 @@ def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
         spec.loader.exec_module(module)
     except Exception as exc:  # pragma: no cover - ログ用の詳細メッセージ
         trace = "".join(traceback.format_exception(exc))
-        raise CLIError(
-            f"FastAPIアプリケーションの読み込みに失敗しました: {exc}\n{trace}"
-        ) from exc
+        raise CLIError(f"Failed to load FastAPI application: {exc}\n{trace}") from exc
 
     candidate_names: Iterable[str]
     if app_name:
@@ -233,7 +224,8 @@ def load_application(file_path: str, app_name: Optional[str] = None) -> FastAPI:
             return app_obj
 
     raise CLIError(
-        "FastAPIアプリケーションが見つかりませんでした。'app' などの変数名を確認してください。"
+        "FastAPI application not found. Ensure your file defines a FastAPI instance "
+        "named 'app' (or use --app-name)."
     )
 
 
@@ -315,52 +307,50 @@ def _handle_cli_error(exc: Exception) -> None:
 def request(
     app_file: str = typer.Argument(
         ...,
-        help="FastAPIアプリケーションが定義されたPythonファイルへのパス",
+        help="Path to the Python file that defines the FastAPI application",
     ),
-    path: str = typer.Option("/", "--path", "-P", help="リクエスト送信先のパス"),
-    method: str = typer.Option("GET", "--method", "-X", help="HTTPメソッド"),
-    data: Optional[str] = typer.Option(
-        None, "--data", "-d", help="JSON形式のリクエストボディ"
-    ),
+    path: str = typer.Option("/", "--path", "-P", help="Request path"),
+    method: str = typer.Option("GET", "--method", "-X", help="HTTP method"),
+    data: Optional[str] = typer.Option(None, "--data", "-d", help="JSON request body"),
     form: List[str] = typer.Option(
         [],
         "--form",
         "-F",
         help=(
-            "フォームデータまたはファイル (複数指定可)。"
-            "フォーム: 'key=value'、ファイル: 'key=@path'。"
-            "ファイルには ';type=mime' や ';filename=name' を追加可能。"
+            "Form fields or files (repeatable). "
+            "Field: 'key=value', file: 'key=@path'. "
+            "For files you can add ';type=mime' and/or ';filename=name'."
         ),
     ),
     header: List[str] = typer.Option(
         [],
         "--header",
         "-H",
-        help="追加するHTTPヘッダー (Key: Value)",
+        help="Additional HTTP headers (Key: Value)",
     ),
     query: List[str] = typer.Option(
         [],
         "--query",
         "-q",
-        help="クエリパラメータ (key=value&foo=bar の形式)",
+        help="Query parameters (e.g. key=value&foo=bar)",
     ),
     include_headers: bool = typer.Option(
-        False, "--include-headers", help="レスポンスヘッダーを出力に含める"
+        False, "--include-headers", help="Include response headers in output"
     ),
     app_name: Optional[str] = typer.Option(
         None,
         "--app-name",
-        help="FastAPIアプリケーションの変数名 (デフォルトは app/application/fastapi_app)",
+        help="FastAPI application variable name (default: app/application/fastapi_app)",
     ),
 ) -> None:
-    """FastAPIアプリケーションに対してHTTPリクエストを送信する。"""
+    """Send an HTTP request to a FastAPI application."""
 
     try:
         # -d と -F の排他制御
         if data is not None and form:
             raise CLIError(
-                "-d (--data) と -F (--form) は同時に指定できません。"
-                "JSON を送信する場合は -d を、フォームデータやファイルを送信する場合は -F を使用してください。"
+                "-d/--data and -F/--form cannot be used together. "
+                "Use -d for JSON, or -F for form fields/files."
             )
 
         normalized_method = _validate_method(method)
@@ -400,7 +390,7 @@ def request(
 
 @app.callback()
 def main() -> None:
-    """fapi-cliのメインコマンド。"""
+    """Main entrypoint for fapi-cli."""
 
     # サブコマンドを提供するだけなので実装は不要
     return None
