@@ -67,6 +67,8 @@ If you are building an AI agent / automation that needs an exact interface contr
 
 - `docs/AI_AGENTS.md`
 
+We also recommend referencing `docs/AI_AGENTS.md` from your agent “entry files” (e.g. `CLAUDE.md`, `AGENTS.md`, or similar), so tools can reliably discover it.
+
 ### Form fields and file uploads
 
 Use `-F` to send form fields and files (equivalent to curl's `-F`).

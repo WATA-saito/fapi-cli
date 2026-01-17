@@ -16,3 +16,13 @@ Use `@/openspec/AGENTS.md` to learn:
 Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
+
+## AI Agent Notes (Recommended)
+
+If your AI agent / automation needs an exact interface contract for `fapi-cli` (options, output JSON schema, exit codes, common error patterns), use:
+
+- `docs/AI_AGENTS.md`
+
+For OpenSpec-driven planning/proposals, follow:
+
+- `openspec/AGENTS.md`
