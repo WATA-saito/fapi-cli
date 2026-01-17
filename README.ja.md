@@ -62,6 +62,14 @@ fapi-cli request src/main.py -H "Authorization: Bearer token" -q "page=1"
 fapi-cli request src/api.py --app-name fastapi_app
 ```
 
+## AIエージェント向け
+
+AIエージェント/自動化ツール向けに、CLI の厳密なインターフェース（オプション仕様、出力 JSON schema、終了コード、代表的なエラーパターン）をまとめたドキュメントを用意しています。
+
+- `docs/AI_AGENTS.md`
+
+また、AIツールが確実に参照できるように、`docs/AI_AGENTS.md` を `CLAUDE.md` / `AGENTS.md` / README などの「エージェント入口ファイル」からリンクすることを推奨します。
+
 ### フォームデータとファイルアップロード
 
 `-F` オプションでフォームデータやファイルを送信できます（curlの`-F`オプションと同等）。
