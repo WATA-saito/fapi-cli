@@ -61,6 +61,14 @@ fapi-cli request src/main.py -H "Authorization: Bearer token" -q "page=1"
 fapi-cli request src/api.py --app-name fastapi_app
 ```
 
+## For AI Agents
+
+If you are building an AI agent / automation that needs an exact interface contract (options, output JSON schema, exit codes, and common error patterns), see:
+
+- `docs/AI_AGENTS.md`
+
+We also recommend referencing `docs/AI_AGENTS.md` from your agent “entry files” (e.g. `CLAUDE.md`, `AGENTS.md`, or similar), so tools can reliably discover it.
+
 ### Form fields and file uploads
 
 Use `-F` to send form fields and files (equivalent to curl's `-F`).
