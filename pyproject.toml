@@ -12,7 +12,7 @@ authors = [{ name = "Wataru" }]
 requires-python = ">=3.9"
 keywords = ["fastapi", "cli", "testing", "http-client", "testclient", "api-testing"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
