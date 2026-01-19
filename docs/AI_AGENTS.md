@@ -19,23 +19,6 @@ This document is written for **AI coding agents** (LLMs, autonomous assistants, 
 
 ---
 
-## Recommended: Put this spec into your agent “entry files”
-
-Many agent runtimes look for repository-level “instruction” files such as `README.md`, `AGENTS.md`, `CLAUDE.md`, or similar. To make agents reliably discover the exact CLI contract, **this document (`docs/AI_AGENTS.md`) should be referenced from those entry files**.
-
-Reference example (Japanese): [AIエージェント向け仕様書の置き方](https://zenn.dev/yusukebe/articles/ff69c13ccafb28)
-
-### Copy-paste snippet (for `README.md`, `AGENTS.md`, `CLAUDE.md`, etc.)
-
-```md
-## AI Agent Notes
-
-- CLI contract (options, output JSON schema, exit codes, common errors):
-  - `docs/AI_AGENTS.md`
-```
-
----
-
 ## CLI Overview
 
 ### Executable

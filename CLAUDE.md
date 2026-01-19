@@ -22,10 +22,3 @@ See:
 If the request mentions planning/spec/proposals/changes (or is ambiguous and needs authoritative guidance), read and follow:
 
 - `openspec/AGENTS.md`
-
-### Reference style guide for agent specs
-
-See:
-
-- [Zenn: AIエージェント向け仕様書の置き方](https://zenn.dev/yusukebe/articles/ff69c13ccafb28)
-
